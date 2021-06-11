@@ -8,7 +8,11 @@
 
 #include <iostream>
 #include <math.h>
+
 using namespace std;
+
+int squareValues[64];
+
 
 
 class Square {
@@ -207,37 +211,483 @@ public:
 
 };
 
-//class Piece {
-//    string name;
-//    string color;
-//    Square location;
-//    bool inPlay;
+int toLocation(char file_in, int rank_in) {
+    return 8 * rank_in + ((int) file_in) - 73;
+}
+
+bool isEmpty(char file_in, int rank_in) {
+    int location = toLocation(file_in, rank_in);
+    return (squareValues[location] == 0);
+}
+
+bool isEmpty(int targetSquare) {
+    return (squareValues[targetSquare] == 0);
+}
+//string toFileRank(int location) {
 //
-//public:
-//    Piece(string name_in, string color_in, char file_in, int rank_in) : name(name_in), color(color_in), location(file_in, rank_in, true, color), inPlay(true) {}
-//
-//    virtual bool move() = 0;
-//
-//    virtual bool attack(Piece &victim) = 0;
-//
-//    char getFile() {
-//        return location.getFile();
+//}
+
+class Piece {
+    int moves;
+    int id;
+    static Piece *pieces[32];
+    string color;
+    string type;
+    char file;
+    int rank;
+    int location;
+    static int lastPieceMoved;
+    //bool inPlay;
+
+public:
+    Piece(int id_in, string type_in, char file_in, int rank_in) : moves(0), id(id_in), type(type_in), file(file_in), rank(rank_in) {
+        if (id <= 16) {
+            color = "White";
+        }
+        else {
+            color = "Black";
+        }
+        location = toLocation(file, rank);
+        squareValues[location] = id;
+        pieces[id-1] = this;
+    }
+    
+    int getMoves() {
+        return moves;
+    }
+    
+    
+    int getId() {
+        return id;
+    }
+    
+    Piece* getPiece(int id) {
+        return pieces[id-1];
+    }
+    
+    void changePieces(Piece *newPiece) {
+        pieces[newPiece->getId() - 1] = newPiece;
+        squareValues[newPiece->getLocation()] = newPiece->getId();
+    }
+    
+    string getColor() {
+        return color;
+    }
+    
+    string getType() {
+        return type;
+    }
+    
+    void setType(string type_in) {
+        type = type_in;
+    }
+    
+    char getFile() {
+        return file;
+    }
+    
+    int getRank() {
+        return rank;
+    }
+    
+    int getLocation() {
+        return location;
+    }
+    
+    int getLastPieceMoved() {
+        return lastPieceMoved;
+    }
+    
+//    void changePlayStatus(bool newStatus) {
+//        inPlay = newStatus;
+//        if (!newStatus) {
+//            pieces[id-1] = nullptr;
+//            squareValues[location] = 0;
+//        }
+//    }
+    
+//    bool canAnyPieceMove(char target_file, int target_rank) {
+//        int targetSquare = toLocation(target_file, target_rank);
+//        if (targetSquare < 0 || targetSquare > 63) {
+//            return false;
+//        }
+//       if (!isEmpty(targetSquare)) {
+//            return false;
+//        }
+//        return true;
+//    }
+    
+    virtual bool canMove(char target_file, int target_rank) {
+        int targetSquare = toLocation(target_file, target_rank);
+        if (targetSquare < 0 || targetSquare > 63) {
+            return false;
+        }
+        if (squareValues[targetSquare] != 0) {
+            if (((pieces[squareValues[targetSquare]-1]->getColor()).compare(this->color)) == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    virtual void move(char target_file, int target_rank) {
+//        if (!canMove(target_file, target_rank)) {
+//            cout << "Cannot move " << color << " " << type << " to " << target_file << " " << target_rank << endl;
+//            return;
+//        }
+        int targetSquare = toLocation(target_file, target_rank);
+        if (squareValues[targetSquare] != 0) {
+            delete pieces[squareValues[targetSquare]-1];
+            cout << file << rank << " captures on " << target_file << target_rank;
+        }
+        else {
+            cout << file << rank << " to " << target_file << target_rank << endl;
+        }
+        squareValues[targetSquare] = id;
+        squareValues[location] = 0;
+        file = target_file;
+        rank = target_rank;
+        location = targetSquare;
+        moves++;
+        lastPieceMoved = id;
+    }
+    
+//    virtual bool canAttack(char target_file, int target_rank) {
+//        int targetSquare = toLocation(target_file, target_rank);
+//        if (targetSquare < 0 || targetSquare > 63) {
+//            return false;
+//        }
+//        if (isEmpty(targetSquare)) {
+//            return false;
+//        }
+//        return canMove(target_file, target_rank);
 //    }
 //
-//    int getRank() {
-//        return location.getRank();
+//    virtual void attack(char target_file, int target_rank) {
+//        if (!canAttack(target_file, target_rank)) {
+//            cout << "Cannot capture on" << target_file << target_rank << endl;
+//        }
+//        else {
+//            int targetLocation = toLocation(target_file, target_rank);
+//            int victimID = squareValues[targetLocation];
+//            Piece *victim = pieces[victimID-1];
+//            delete victim;
+//            cout << file << rank << " captures on " << target_file << target_rank;
+//        }
 //    }
-//};
-//
-//class Knight : public Piece {
-//public:
-//    Knight(string name_in, string color_in, char file_in, int rank_in) : Piece(name_in, color_in, file_in, rank_in) {}
-//
-//
-//};
+    
+    virtual ~Piece() {
+        pieces[id-1] = nullptr;
+        squareValues[location] = 0;
+    }
+    
+};
+
+class Knight : public Piece {
+public:
+    Knight(int id_in, char file_in, int rank_in) : Piece(id_in, "Knight", file_in, rank_in) {}
+    
+    bool canMove(char target_file, int target_rank) override {
+        if (!Piece::canMove(target_file, target_rank)) {
+            return false;
+        }
+        if ((abs(target_file - getFile()) == 2) && (abs(target_rank - getRank()) == 1)) {
+            return true;
+        }
+        else if ((abs(target_file - getFile()) == 1) && (abs(target_rank - getRank()) == 2)) {
+            return true;
+        }
+        return false;
+    }
+};
+
+class Rook : public Piece {
+public:
+    Rook(int id_in, char file_in, int rank_in) : Piece(id_in, "Rook", file_in, rank_in) {}
+    
+    bool canMove(char target_file, int target_rank) override {
+        if (!Piece::canMove(target_file, target_rank)) {
+            return false;
+        }
+        int targetSquare = toLocation(target_file, target_rank);
+        if ((target_file == getFile()) && (target_rank < getRank())) {
+            for (int i = getLocation() - 8; i > targetSquare; i--) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file == getFile()) && (target_rank > getRank())) {
+            for (int i = getLocation() + 8; i < targetSquare; i++) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file < getFile()) && (target_rank == getRank())) {
+            for (int i = getLocation() - 1; i > targetSquare; i--) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file > getFile()) && (target_rank == getRank())) {
+            for (int i = getLocation() + 1; i < targetSquare; i++) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+};
+
+class Bishop : public Piece {
+public:
+    Bishop(int id_in, char file_in, int rank_in) : Piece(id_in, "Bishop", file_in, rank_in) {}
+    
+    virtual bool canMove(char target_file, int target_rank) override {
+        if (!Piece::canMove(target_file, target_rank)) {
+            return false;
+        }
+        if (abs(target_file - getFile()) != abs(target_rank - getRank())) {
+            return false;
+        }
+        int targetSquare = toLocation(target_file, target_rank);
+        if ((target_file < getFile()) && (target_rank < getRank())) {
+            for (int i = getLocation() - 9; i > targetSquare; i--) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file < getFile()) && (target_rank > getRank())) {
+            for (int i = getLocation() + 7; i < targetSquare; i++) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file > getFile()) && (target_rank < getRank())) {
+            for (int i = getLocation() - 7; i > targetSquare; i--) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file > getFile()) && (target_rank > getRank())) {
+            for (int i = getLocation() + 9; i < targetSquare; i++) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+};
+
+class Queen : public Bishop {
+public:
+    Queen(int id_in, char file_in, int rank_in) : Bishop(id_in, file_in, rank_in) {
+        setType("Queen");
+    }
+    
+    bool canMove(char target_file, int target_rank) override {
+        if (Bishop::canMove(target_file, target_rank)) {
+            return true;
+        }
+        int targetSquare = toLocation(target_file, target_rank);
+        if ((target_file == getFile()) && (target_rank < getRank())) {
+            for (int i = getLocation() - 8; i > targetSquare; i--) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file == getFile()) && (target_rank > getRank())) {
+            for (int i = getLocation() + 8; i < targetSquare; i++) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file < getFile()) && (target_rank == getRank())) {
+            for (int i = getLocation() - 1; i > targetSquare; i--) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        else if ((target_file > getFile()) && (target_rank == getRank())) {
+            for (int i = getLocation() + 1; i < targetSquare; i++) {
+                if (squareValues[i] != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+};
+
+class Pawn : public Piece {
+public:
+    Pawn(int id_in, char file_in, int rank_in) : Piece(id_in, "Pawn", file_in, rank_in) {}
+    
+    bool canMove(char target_file, int target_rank) override {
+        if (!Piece::canMove(target_file, target_rank)) {
+            return false;
+        }
+        int targetSquare = toLocation(target_file, target_rank);
+        if (squareValues[targetSquare] == 0) {
+        if (getId() <= 16) {
+            if (targetSquare - getLocation() == 8) {
+                return true;
+            }
+            if ((targetSquare - getLocation() == 16) && (getMoves() == 0)) {
+                return true;
+            }
+            if ((getRank() == 5) && (target_rank - getRank() == 1) && (abs(target_file - getFile()) == 1)) {
+                string lastMoved = getPiece(getLastPieceMoved())->getType();
+                int totalMoves = getPiece(getLastPieceMoved())->getMoves();
+                if ((getLastPieceMoved() == squareValues[targetSquare-8]) && (lastMoved.compare("Pawn")) == 0 && (totalMoves == 1)) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+        else {
+            if (targetSquare - getLocation() == -8) {
+                return true;
+            }
+            if ((targetSquare - getLocation() == -16) && (getMoves() == 0)) {
+                return true;
+            }
+            if ((getRank() == 4) && (target_rank - getRank() == -1) && (abs(target_file - getFile()) == 1)) {
+                string lastMoved = getPiece(getLastPieceMoved())->getType();
+                int totalMoves = getPiece(getLastPieceMoved())->getMoves();
+                if ((getLastPieceMoved() == squareValues[targetSquare+8]) && (lastMoved.compare("Pawn")) == 0 && (totalMoves == 1)) {
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
+        }
+        else {
+            if (getId() <= 16) {
+                if ((target_rank - getRank() == 1) && (abs(target_file - getFile()) == 1)) {
+                    return true;
+                }
+                return false;
+            }
+            else {
+                if ((target_rank - getRank() == -1) && (abs(target_file - getFile()) == 1)) {
+                    return true;
+                }
+                return false;
+            }
+        }
+    }
+    
+    void move(char target_file, int target_rank) override {
+        int targetSquare = toLocation(target_file, target_rank);
+        if ((abs(target_file - getFile()) == 1) && (abs(target_rank - getRank()) == 1) && (squareValues[targetSquare] == 0)) {
+            int victimSquare = toLocation(target_file, getRank());
+            delete getPiece(squareValues[victimSquare]);
+        }
+        Piece::move(target_file, target_rank);
+        if (((getId() <= 16) && (getRank() == 8)) || ((getId() >= 17) && (getRank() == 1))) {
+            string newType = "Pawn";
+            cout << "Enter a new piece (Knight, Bishop, Rook, or Queen): ";
+            cin >> newType;
+            cout << endl;
+            while ((newType.compare("Knight") != 0) && (newType.compare("Bishop") != 0) && (newType.compare("Rook") != 0) && (newType.compare("Knight") != 0)) {
+                cout << "Try again (Knight, Bishop, Rook, or Queen): ";
+                cin >> newType;
+                cout << endl;
+            }
+            Piece *newPiece;
+            if (newType.compare("Knight") == 0) {
+                newPiece = new Knight(this->getId(), this->getFile(), this->getRank());
+            }
+            else if (newType.compare("Bishop") == 0) {
+                newPiece = new Bishop(this->getId(), this->getFile(), this->getRank());
+            }
+            else if (newType.compare("Rook") == 0) {
+                newPiece = new Rook(this->getId(), this->getFile(), this->getRank());
+            }
+            else {
+                newPiece = new Queen(this->getId(), this->getFile(), this->getRank());
+            }
+            delete this;
+            changePieces(newPiece);
+            cout << "Pawn to " << newType << " on " << newPiece->getFile() << newPiece->getRank() << endl;
+        }
+    }
+};
+
+class King : public Piece {
+public:
+    King(int id_in, char file_in, int rank_in) : Piece(id_in, "King", file_in, rank_in) {}
+    
+    bool canMove(char target_file, int target_rank) override {
+        if ((abs(target_file - getFile()) <= 1) && (abs(target_rank - getRank()) <= 1)) {
+            return true;
+        }
+        if ((getMoves() == 0) && (target_file == 'C') && (target_rank == getRank())) {
+            int rookLocation = toLocation('A', getRank());
+            if (getPiece(squareValues[rookLocation])->getMoves() == 0) {
+                for (int i = rookLocation+1; i <= rookLocation+3; i++) {
+                    if (squareValues[i] != 0) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        else if ((getMoves() == 0) && (target_file == 'G') && (target_rank == getRank())) {
+            int rookLocation = toLocation('H', getRank());
+            if (getPiece(squareValues[rookLocation])->getMoves() == 0) {
+                for (int i = getLocation()+1; i <= rookLocation-1; i++) {
+                    if (squareValues[i] != 0) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+    
+    void move(char target_file, int target_rank) override {
+        int targetSquare = toLocation(target_file, target_rank);
+        if (targetSquare - getLocation() == -3) {
+            getPiece(squareValues[toLocation('A', this->getRank())])->move('D', getRank());
+        }
+        else if (targetSquare - getLocation() == 2) {
+            getPiece(squareValues[toLocation('H', this->getRank())])->move('F', getRank());
+        }
+        Piece::move(target_file, target_rank);
+    }
+};
 
 int main(int argc, const char * argv[]) {
-    int a = 'b' - 'c';
+    int a = 'f' - 'c';
     cout << a << endl;
     return 0;
 }
