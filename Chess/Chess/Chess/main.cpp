@@ -325,9 +325,9 @@ public:
         return notInPlay;
     }
     
-    static void setNotInPlay(int id) {
-        notInPlay = getPiece(id);
-    }
+//    static void setNotInPlay(int id) {
+//        notInPlay = getPiece(id);
+//    }
     
 //    void changePlayStatus(bool newStatus) {
 //        inPlay = newStatus;
@@ -349,10 +349,10 @@ public:
 //    }
     
     virtual bool canMove(char target_file, int target_rank) {
-        int targetSquare = toLocation(target_file, target_rank);
-        if (targetSquare < 0 || targetSquare > 63) {
+        if (target_file < 'A' || target_file > 'H' || target_rank < 1 || target_rank > 8) {
             return false;
         }
+        int targetSquare = toLocation(target_file, target_rank);
         if (!isEmpty(targetSquare)) {
             if (((getPiece(squareValues[targetSquare]))->getColor().compare(this->color)) == 0) {
                 return false;
@@ -393,7 +393,7 @@ public:
     
     void moveBack(char startingFile, int startingRank) {
         int startingSquare = toLocation(startingFile, startingRank);
-        if (getMoves() == 0 && getType() == "Queen") {
+        if (moves == 0 && type.compare("Queen") == 0) {
             notInPlay->file = startingFile;
             notInPlay->rank = startingRank;
             pieces[notInPlay->getId() - 1] = notInPlay;
@@ -407,6 +407,14 @@ public:
             rank = startingRank;
             location = startingSquare;
             moves--;
+            if (type.compare("King") == 0) {
+                if (id <= 16) {
+                    whiteKingSquare = location;
+                }
+                else {
+                    blackKingSquare = location;
+                }
+            }
             if (notInPlay != nullptr) {
                 notInPlay->setInPlay(true);
             }
@@ -675,11 +683,13 @@ public:
     void move(char target_file, int target_rank) override {
         if ((abs(target_file - getFile()) == 1) && (abs(target_rank - getRank()) == 1) && (isEmpty(target_file, target_rank))) {
             int victimSquare = toLocation(target_file, getRank());
-            delete getPiece(squareValues[victimSquare]);
+            getPiece(squareValues[victimSquare])->setInPlay(false);
             cout << getColor() << ": " << getFile() << getRank() << " captures on " << target_file << target_rank << " (en passant)" << endl;
             justMove(target_file, target_rank);
         }
-        Piece::move(target_file, target_rank);
+        else {
+            Piece::move(target_file, target_rank);
+        }
         if (((getId() <= 16) && (getRank() == 8)) || ((getId() >= 17) && (getRank() == 1))) {
             string newType = "Pawn";
             cout << "Enter a new piece (Knight, Bishop, Rook, or Queen): ";
@@ -774,11 +784,12 @@ public:
 
 class Game {
     string currentPlayer;
+    string oppositePlayer;
     bool whiteKingCheck;
     bool blackKingCheck;
     
 public:
-    Game() : currentPlayer("White"), whiteKingCheck(false), blackKingCheck(false) {
+    Game() : currentPlayer("White"), oppositePlayer("Black"), whiteKingCheck(false), blackKingCheck(false) {
         for (int i = 1; i <= 8; i++) {
             new Pawn(i, (char) (i+64), 2);
         }
@@ -803,16 +814,14 @@ public:
         new Rook(32, 'H', 8);
     }
     
-    Piece* getPiece(int id) {
-        return Piece::pieces[id-1];
-    }
+    
     
     bool kingCheckStatus(string color) {
         if (color.compare("White") == 0) {
-            char kingFile = getPiece(13)->getFile();
-            char kingRank = getPiece(13)->getRank();
+            char kingFile = Piece::getPiece(13)->getFile();
+            int kingRank = Piece::getPiece(13)->getRank();
             for (int i = 17; i <= 32; i++) {
-                if (getPiece(i)->canMove(kingFile, kingRank)) {
+                if (Piece::getPiece(i)->canMove(kingFile, kingRank)) {
                     whiteKingCheck = true;
                     return true;
                 }
@@ -821,10 +830,10 @@ public:
             return false;
         }
         else {
-            char kingFile = getPiece(29)->getFile();
-            char kingRank = getPiece(29)->getRank();
+            char kingFile = Piece::getPiece(29)->getFile();
+            int kingRank = Piece::getPiece(29)->getRank();
             for (int i = 1; i <= 16; i++) {
-                if (getPiece(i)->canMove(kingFile, kingRank)) {
+                if (Piece::getPiece(i)->canMove(kingFile, kingRank)) {
                     blackKingCheck = true;
                     return true;
                 }
@@ -834,6 +843,16 @@ public:
         }
     }
     
+    void afterMateCheck(int id, int offset, char file, int rank, bool kingCheck) {
+        if (offset == 0) {
+            whiteKingCheck = kingCheck;
+        }
+        else {
+            blackKingCheck = kingCheck;
+        }
+        Piece::getPiece(id)->moveBack(file, rank);
+    }
+    
     bool isMate() {
         int offset = 0;
         bool kingCheck = whiteKingCheck;
@@ -841,34 +860,212 @@ public:
             offset = 16;
             kingCheck = blackKingCheck;
         }
-        for (int i = 1+offset; i <= 16+offset; i++) {
-            if (getPiece(i) != nullptr) {
-                for (char j = 'A'; j < 'H'; j++) {
-                    for (int k = 1; k <= 8; k++) {
-                        if (getPiece(i)->canMove(j, k)) {
-                            char originalFile = getPiece(i)->getFile();
-                            int originalRank = getPiece(i)->getRank();
-                            getPiece(i)->move(j, k);
+        for (int i = 13+offset; i <= 16+offset; i++) {
+            while (Piece::getPiece(i) == nullptr) {
+                i++;
+            }
+            char originalFile = Piece::getPiece(i)->getFile();
+            int originalRank = Piece::getPiece(i)->getRank();
+            if (Piece::getPiece(i)->getType().compare("Pawn") == 0) {
+                for (char j = originalFile - 1; j <= originalFile + 1; j++) {
+                    if (Piece::getPiece(i)->canMove(j, originalRank+1)) {
+                        Piece::getPiece(i)->move(j, originalRank+1);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                }
+            }
+            else if (Piece::getPiece(i)->getType().compare("King") == 0) {
+                for (char j = originalFile-1; j <= originalFile+1; j++) {
+                    for (int k = originalRank-1; k <= originalRank+1; k++) {
+                        if (Piece::getPiece(i)->canMove(j, k)) {
+                            Piece::getPiece(i)->move(j, k);
                             if (!kingCheckStatus(currentPlayer)) {
-                                if (offset == 0) {
-                                    whiteKingCheck = kingCheck;
-                                }
-                                else {
-                                    blackKingCheck = kingCheck;
-                                }
-                                getPiece(i)->moveBack(originalFile, originalRank);
+                                afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
                                 return false;
                             }
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
                         }
                     }
                 }
             }
-        }
-        if (offset == 0) {
-            whiteKingCheck = kingCheck;
-        }
-        else {
-            blackKingCheck = kingCheck;
+            else if (Piece::getPiece(i)->getType().compare("Rook") == 0) {
+                for (int k = 1; k <= 8; k++) {
+                    if (Piece::getPiece(i)->canMove(originalFile, k)) {
+                        Piece::getPiece(i)->move(originalFile, k);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                }
+                for (char j = 'A'; j <= 'H'; j++) {
+                    if (Piece::getPiece(i)->canMove(j, originalRank)) {
+                        Piece::getPiece(i)->move(j, originalRank);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                }
+            }
+            else if (Piece::getPiece(i)->getType().compare("Knight") == 0) {
+                for (char j = originalFile-1; j <= originalFile+1; j += 2) {
+                    for (int k = originalRank-2; k <= originalRank+2; k += 4) {
+                        if (Piece::getPiece(i)->canMove(j, k)) {
+                            Piece::getPiece(i)->move(j, k);
+                            if (!kingCheckStatus(currentPlayer)) {
+                                afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                                return false;
+                            }
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                        }
+                    }
+                }
+                for (char j = originalFile-2; j <= originalFile+2; j += 4) {
+                    for (int k = originalRank-1; k <= originalRank+1; k += 2) {
+                        if (Piece::getPiece(i)->canMove(j, k)) {
+                            Piece::getPiece(i)->move(j, k);
+                            if (!kingCheckStatus(currentPlayer)) {
+                                afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                                return false;
+                            }
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                        }
+                    }
+                }
+            }
+            else if (Piece::getPiece(i)->getType().compare("Bishop") == 0) {
+                int j = 0;
+                while (originalFile-j >= 'A' && originalRank-j >= 1) {
+                    if (Piece::getPiece(i)->canMove(originalFile-j, originalRank-j)) {
+                        Piece::getPiece(i)->move(originalFile-j, originalRank-j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+                j = 0;
+                while (originalFile-j >= 'A' && originalRank+j <= 8) {
+                    if (Piece::getPiece(i)->canMove(originalFile-j, originalRank+j)) {
+                        Piece::getPiece(i)->move(originalFile-j, originalRank+j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+                j = 0;
+                while (originalFile+j <= 'H' && originalRank-j >= 1) {
+                    if (Piece::getPiece(i)->canMove(originalFile+j, originalRank-j)) {
+                        Piece::getPiece(i)->move(originalFile+j, originalRank-j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+                j = 0;
+                while (originalFile+j <= 'H' && originalRank+j <= 8) {
+                    if (Piece::getPiece(i)->canMove(originalFile+j, originalRank+j)) {
+                        Piece::getPiece(i)->move(originalFile+j, originalRank+j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+            }
+            else {
+                for (int k = 1; k <= 8; k++) {
+                    if (Piece::getPiece(i)->canMove(originalFile, k)) {
+                        Piece::getPiece(i)->move(originalFile, k);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                }
+                for (char j = 'A'; j <= 'H'; j++) {
+                    if (Piece::getPiece(i)->canMove(j, originalRank)) {
+                        Piece::getPiece(i)->move(j, originalRank);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                }
+                int j = 0;
+                while (originalFile-j >= 'A' && originalRank-j >= 1) {
+                    if (Piece::getPiece(i)->canMove(originalFile-j, originalRank-j)) {
+                        Piece::getPiece(i)->move(originalFile-j, originalRank-j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+                j = 0;
+                while (originalFile-j >= 'A' && originalRank+j <= 8) {
+                    if (Piece::getPiece(i)->canMove(originalFile-j, originalRank+j)) {
+                        Piece::getPiece(i)->move(originalFile-j, originalRank+j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+                j = 0;
+                while (originalFile+j <= 'H' && originalRank-j >= 1) {
+                    if (Piece::getPiece(i)->canMove(originalFile+j, originalRank-j)) {
+                        Piece::getPiece(i)->move(originalFile+j, originalRank-j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+                j = 0;
+                while (originalFile+j <= 'H' && originalRank+j <= 8) {
+                    if (Piece::getPiece(i)->canMove(originalFile+j, originalRank+j)) {
+                        Piece::getPiece(i)->move(originalFile+j, originalRank+j);
+                        if (!kingCheckStatus(currentPlayer)) {
+                            afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            return false;
+                        }
+                        afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                    }
+                    j++;
+                }
+            }
+            if (i == 13+offset) {
+                i = offset;
+            }
+            else if (i == 12+offset) {
+                i++;
+            }
         }
         return true;
     }
@@ -876,27 +1073,97 @@ public:
     bool movePiece(char currentFile, int currentRank, char targetFile, int targetRank) {
         int currentSquare = toLocation(currentFile, currentRank);
         int targetSquare = toLocation(targetFile, targetRank);
-        if (isEmpty(currentSquare) || !getPiece(squareValues[currentSquare])->canMove(targetFile, targetRank)) {
+        bool kingCheck = false;
+        int offset = 56;
+        if (currentPlayer.compare("White")) {
+            kingCheck = kingCheckStatus("White");
+        }
+        else {
+            kingCheck = kingCheckStatus("Black");
+            offset = 0;
+        }
+        if (isMate()) {
+            if (kingCheck) {
+                cout << "Checkmate! " << oppositePlayer << "has won!" << endl;
+            }
+            else {
+                cout << "Stalemate! Game has ended in a draw!" << endl;
+            }
+        }
+        
+        if (isEmpty(currentSquare)) {
+            cout << "Choose a square with a piece" << endl;
             return false;
         }
-        getPiece(squareValues[currentSquare])->move(targetFile, targetRank);
-        if (kingCheckStatus(currentPlayer)) {
-            getPiece(squareValues[targetSquare])->moveBack(currentFile, currentRank);
+        if ((currentPlayer.compare("White") == 0 && squareValues[currentSquare] > 16) || (currentPlayer.compare("Black") == 0 && squareValues[currentSquare] < 17)) {
+            cout << "Choose a " << currentPlayer << " piece" << endl;
             return false;
+        }
+        if (!Piece::getPiece(squareValues[currentSquare])->canMove(targetFile, targetRank)) {
+            cout << "Cannot move from " << currentFile << currentRank << " to " << targetFile << targetRank << endl;
+            return false;
+        }
+        if (kingCheck && (squareValues[currentSquare] % 16 == 13) && (abs(targetSquare-currentSquare) == 0)) {
+            cout << "Cannot castle on a Check" << endl;
+        }
+        Piece::getPiece(squareValues[currentSquare])->move(targetFile, targetRank);
+        if (kingCheckStatus(currentPlayer)) {
+            Piece::getPiece(squareValues[targetSquare])->moveBack(currentFile, currentRank);
+            return false;
+        }
+        if (Piece::getNotInPlay() != nullptr) {
+            delete Piece::getNotInPlay();
+        }
+        for (int i = offset; i < offset+8; i++) {
+            if (Piece::getPiece(squareValues[i])->getType().compare("Pawn") == 0) {
+                Piece *currentPawn = Piece::getPiece(squareValues[i]);
+                string newType = "Pawn";
+                cout << "Enter a new piece (Knight, Bishop, Rook, or Queen): ";
+                cin >> newType;
+                cout << endl;
+                while ((newType.compare("Knight") != 0) && (newType.compare("Bishop") != 0) && (newType.compare("Rook") != 0) && (newType.compare("Knight") != 0)) {
+                    cout << "Try again (Knight, Bishop, Rook, or Queen): ";
+                    cin >> newType;
+                    cout << endl;
+                }
+                Piece *newPiece = nullptr;
+                if (newType.compare("Knight") == 0) {
+                    newPiece = new Knight(currentPawn->getId(), currentPawn->getFile(), i/8 + 1);
+                }
+                else if (newType.compare("Bishop") == 0) {
+                    newPiece = new Bishop(currentPawn->getId(), currentPawn->getFile(), i/8 + 1);
+                }
+                else if (newType.compare("Rook") == 0) {
+                    newPiece = new Rook(currentPawn->getId(), currentPawn->getFile(), i/8 + 1);
+                }
+                else {
+                    newPiece = new Queen(currentPawn->getId(), currentPawn->getFile(), i/8 + 1);
+                }
+                delete currentPawn;
+                Piece::changePieces(newPiece);
+                cout << newPiece->getColor() << ": Pawn to " << newType << " on " << newPiece->getFile() << newPiece->getRank() << endl;
+            }
         }
         return true;
     }
     
     ~Game() {
         for (int i = 1; i <= 32; i++) {
-            if (getPiece(i) != nullptr) {
-                delete getPiece(i);
+            if (Piece::getPiece(i) != nullptr) {
+                delete Piece::getPiece(i);
             }
         }
     }
 };
 
 int main(int argc, const char * argv[]) {
-    cout << 5 << endl;
-    return 0;
+    for (int i = 13; i <= 16; i++) {
+        cout << i << endl;
+        if (i == 13) {
+            i = 0;
+        }
+        else if (i == 12) {
+            i++;
+        }
+    }
 }
