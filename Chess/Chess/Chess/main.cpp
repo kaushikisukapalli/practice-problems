@@ -383,10 +383,6 @@ public:
         int targetSquare = toLocation(target_file, target_rank);
         if (!isEmpty(targetSquare)) {
             getPiece(squareValues[targetSquare])->setInPlay(false);
-            printAttackLines(target_file, target_rank);
-        }
-        else {
-            printMoveLines(target_file, target_rank);
         }
         justMove(target_file, target_rank);
     }
@@ -733,7 +729,7 @@ public:
         }
         if ((getMoves() == 0) && (target_file == 'C') && (target_rank == getRank())) {
             int rookLocation = toLocation('A', getRank());
-            if (getPiece(squareValues[rookLocation])->getMoves() == 0) {
+            if (getPiece(squareValues[rookLocation])->getMoves() == 0 && ((getPiece(squareValues[rookLocation])->getId() % 16) == 9)) {
                 for (int i = rookLocation+1; i <= rookLocation+3; i++) {
                     if (!isEmpty(i)) {
                         return false;
@@ -745,7 +741,7 @@ public:
         }
         else if ((getMoves() == 0) && (target_file == 'G') && (target_rank == getRank())) {
             int rookLocation = toLocation('H', getRank());
-            if (getPiece(squareValues[rookLocation])->getMoves() == 0) {
+            if (getPiece(squareValues[rookLocation])->getMoves() == 0 && ((getPiece(squareValues[rookLocation])->getId() % 16) == 0)) {
                 for (int i = getLocation()+1; i <= rookLocation-1; i++) {
                     if (!isEmpty(i)) {
                         return false;
@@ -787,9 +783,10 @@ class Game {
     string oppositePlayer;
     bool whiteKingCheck;
     bool blackKingCheck;
+    bool mate;
     
 public:
-    Game() : currentPlayer("White"), oppositePlayer("Black"), whiteKingCheck(false), blackKingCheck(false) {
+    Game() : currentPlayer("White"), oppositePlayer("Black"), whiteKingCheck(false), blackKingCheck(false), mate(false) {
         for (int i = 1; i <= 8; i++) {
             new Pawn(i, (char) (i+64), 2);
         }
@@ -814,13 +811,22 @@ public:
         new Rook(32, 'H', 8);
     }
     
+    string getCurrentPlayer() {
+        return currentPlayer;
+    }
     
+    string getOppositePlayer() {
+        return oppositePlayer;
+    }
     
     bool kingCheckStatus(string color) {
         if (color.compare("White") == 0) {
             char kingFile = Piece::getPiece(13)->getFile();
             int kingRank = Piece::getPiece(13)->getRank();
             for (int i = 17; i <= 32; i++) {
+                if (Piece::getPiece(i) == nullptr) {
+                    i++;
+                }
                 if (Piece::getPiece(i)->canMove(kingFile, kingRank)) {
                     whiteKingCheck = true;
                     return true;
@@ -833,6 +839,9 @@ public:
             char kingFile = Piece::getPiece(29)->getFile();
             int kingRank = Piece::getPiece(29)->getRank();
             for (int i = 1; i <= 16; i++) {
+                if (Piece::getPiece(i) == nullptr) {
+                    i++;
+                }
                 if (Piece::getPiece(i)->canMove(kingFile, kingRank)) {
                     blackKingCheck = true;
                     return true;
@@ -853,6 +862,10 @@ public:
         Piece::getPiece(id)->moveBack(file, rank);
     }
     
+    bool getMate() {
+        return mate;
+    }
+    
     bool isMate() {
         int offset = 0;
         bool kingCheck = whiteKingCheck;
@@ -862,6 +875,12 @@ public:
         }
         for (int i = 13+offset; i <= 16+offset; i++) {
             while (Piece::getPiece(i) == nullptr) {
+                if (i == 13+offset) {
+                    i = offset;
+                }
+                else if (i == 12+offset) {
+                    i++;
+                }
                 i++;
             }
             char originalFile = Piece::getPiece(i)->getFile();
@@ -872,6 +891,7 @@ public:
                         Piece::getPiece(i)->move(j, originalRank+1);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -885,6 +905,7 @@ public:
                             Piece::getPiece(i)->move(j, k);
                             if (!kingCheckStatus(currentPlayer)) {
                                 afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                                mate = false;
                                 return false;
                             }
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -898,6 +919,7 @@ public:
                         Piece::getPiece(i)->move(originalFile, k);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -908,6 +930,7 @@ public:
                         Piece::getPiece(i)->move(j, originalRank);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -921,6 +944,7 @@ public:
                             Piece::getPiece(i)->move(j, k);
                             if (!kingCheckStatus(currentPlayer)) {
                                 afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                                mate = false;
                                 return false;
                             }
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -933,6 +957,7 @@ public:
                             Piece::getPiece(i)->move(j, k);
                             if (!kingCheckStatus(currentPlayer)) {
                                 afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                                mate = false;
                                 return false;
                             }
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -947,6 +972,7 @@ public:
                         Piece::getPiece(i)->move(originalFile-j, originalRank-j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -959,6 +985,7 @@ public:
                         Piece::getPiece(i)->move(originalFile-j, originalRank+j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -971,6 +998,7 @@ public:
                         Piece::getPiece(i)->move(originalFile+j, originalRank-j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -983,6 +1011,7 @@ public:
                         Piece::getPiece(i)->move(originalFile+j, originalRank+j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -996,6 +1025,7 @@ public:
                         Piece::getPiece(i)->move(originalFile, k);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -1006,6 +1036,7 @@ public:
                         Piece::getPiece(i)->move(j, originalRank);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -1017,6 +1048,7 @@ public:
                         Piece::getPiece(i)->move(originalFile-j, originalRank-j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -1029,6 +1061,7 @@ public:
                         Piece::getPiece(i)->move(originalFile-j, originalRank+j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -1041,6 +1074,7 @@ public:
                         Piece::getPiece(i)->move(originalFile+j, originalRank-j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -1053,6 +1087,7 @@ public:
                         Piece::getPiece(i)->move(originalFile+j, originalRank+j);
                         if (!kingCheckStatus(currentPlayer)) {
                             afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
+                            mate = false;
                             return false;
                         }
                         afterMateCheck(i, offset, originalFile, originalRank, kingCheck);
@@ -1067,6 +1102,7 @@ public:
                 i++;
             }
         }
+        mate = true;
         return true;
     }
     
@@ -1095,7 +1131,7 @@ public:
             cout << "Choose a square with a piece" << endl;
             return false;
         }
-        if ((currentPlayer.compare("White") == 0 && squareValues[currentSquare] > 16) || (currentPlayer.compare("Black") == 0 && squareValues[currentSquare] < 17)) {
+        if ((offset == 0 && squareValues[currentSquare] > 16) || (offset == 56 && squareValues[currentSquare] < 17)) {
             cout << "Choose a " << currentPlayer << " piece" << endl;
             return false;
         }
@@ -1103,8 +1139,9 @@ public:
             cout << "Cannot move from " << currentFile << currentRank << " to " << targetFile << targetRank << endl;
             return false;
         }
-        if (kingCheck && (squareValues[currentSquare] % 16 == 13) && (abs(targetSquare-currentSquare) == 0)) {
+        if (kingCheck && (squareValues[currentSquare] % 16 == 13) && (abs(targetSquare-currentSquare) == 2)) {
             cout << "Cannot castle on a Check" << endl;
+            return false;
         }
         Piece::getPiece(squareValues[currentSquare])->move(targetFile, targetRank);
         if (kingCheckStatus(currentPlayer)) {
@@ -1157,13 +1194,60 @@ public:
 };
 
 int main(int argc, const char * argv[]) {
-    for (int i = 13; i <= 16; i++) {
-        cout << i << endl;
-        if (i == 13) {
-            i = 0;
+    Game chess;
+    bool gameOver = false;
+    while (!gameOver) {
+        bool kingCheck = false;
+        int offset = 56;
+        if (chess.getCurrentPlayer().compare("White")) {
+            kingCheck = chess.kingCheckStatus("White");
         }
-        else if (i == 12) {
-            i++;
+        else {
+            kingCheck = chess.kingCheckStatus("Black");
+            offset = 0;
         }
+        if (chess.isMate()) {
+            if (kingCheck) {
+                cout << "Checkmate! " << chess.getOppositePlayer() << "has won!" << endl;
+            }
+            else {
+                cout << "Stalemate! Game has ended in a draw!" << endl;
+            }
+            gameOver = true;
+        }
+        string startingSquare = "";
+        cout << chess.getCurrentPlayer() << ": Enter a starting square: ";
+        bool acceptedStartingSquare = false;
+        char startfile = '0';
+        int startrank = 0;
+        while (!acceptedStartingSquare) {
+            cin >> startingSquare;
+            cout << endl;
+            while (startingSquare.length() != 2 || startingSquare[0] < 'A' || startingSquare[0] > 'H' || startingSquare[1] < '1' || startingSquare[1] > 8) {
+                cout << "Choose a valid starting square: ";
+                cin >> startingSquare;
+                cout << endl;
+            }
+            startfile = startingSquare[0];
+            startrank = ((int) startingSquare[1]) - 48;
+            int startSquare = toLocation(startfile, startrank);
+            if (isEmpty(startSquare) || (squareValues[startSquare] > 16 && chess.getCurrentPlayer().compare("White") == 0) || (squareValues[startSquare] < 17 && chess.getCurrentPlayer().compare("Black") == 0)) {
+                cout << "Choose a square with a " << chess.getCurrentPlayer() << " piece: ";
+            }
+            else {
+                acceptedStartingSquare = true;
+            }
+        }
+        string endSquare = "";
+        cout << chess.getCurrentPlayer() << ": Enter a square to move to: ";
+        bool acceptedEndSquare = false;
+        char endFile = '0';
+        int endRank = 0;
+        while (!acceptedEndSquare) {
+            <#statements#>
+        }
+
     }
+    cout << (int) '1' << endl;
+    
 }

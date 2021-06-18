@@ -14,8 +14,8 @@
             filePath = "Chess/main.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "820"
-            endingLineNumber = "820"
+            startingLineNumber = "823"
+            endingLineNumber = "823"
             landmarkName = "kingCheckStatus(color)"
             landmarkType = "7">
          </BreakpointContent>
