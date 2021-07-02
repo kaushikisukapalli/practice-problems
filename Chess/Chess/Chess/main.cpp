@@ -13,204 +13,6 @@ using namespace std;
 
 int squareValues[64];
 
-
-
-class Square {
-    char file;
-    int rank;
-    static bool squaresOccupied[64];
-    bool occupied;
-    string pieceColor;
-    string pieceType;
-    int location;
-    
-public:
-    Square(char f_in, int r_in, bool o_in, string c_in, string t_in) : file(f_in), rank(r_in), occupied(o_in), pieceColor(c_in), pieceType(t_in) {
-        location = 8 * rank + ((int) file) - 73;
-    }
-    
-    void setOccupiedValue(bool value) {
-        occupied = value;
-        squaresOccupied[location] = value;
-        if (!value) {
-            setPieceColor("None");
-            setPieceType("None");
-        }
-    }
-    
-    bool getOccupiedValue() {
-        return occupied;
-    }
-    
-    char getFile() {
-        return file;
-    }
-    
-    int getRank() {
-        return rank;
-    }
-    
-    int getLocation() {
-        return location;
-    }
-    
-    void setPieceColor(string color_in) {
-        pieceColor = color_in;
-    }
-    
-    string getPieceColor() {
-        return pieceColor;
-    }
-    
-    void setPieceType(string type_in) {
-        pieceType = type_in;
-    }
-    
-    string getPieceType() {
-        return pieceType;
-    }
-    
-    void movePiece(Square &target) {
-        target.setPieceColor(pieceColor);
-        target.setPieceType(pieceType);
-        target.setOccupiedValue(true);
-        this->setOccupiedValue(false);
-        cout << target.getPieceColor() << ": " << this->getFile() << this->getRank() << " to " << target.getFile() << target.getRank() << endl;
-    }
-    
-    bool rookCanMove(Square &target) {
-        if (target.getFile() == this->getFile() && target.getRank() < this->getRank()) {
-            for (int i = this->getLocation() - 8; i >= target.getLocation(); i -= 8) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else if (target.getFile() == this->getFile() && target.getRank() > this->getRank()) {
-            for (int i = this->getLocation() + 8; i <= target.getLocation(); i += 8) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else if (target.getRank() == this->getRank() && ((int) target.getFile() < (int) this->getRank())) {
-            for (int i = this->getLocation() - 1; i >= target.getLocation(); i--) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else if (target.getRank() == this->getRank() && ((int) target.getFile() > (int) this->getRank())) {
-            for (int i = this->getLocation() + 1; i <= target.getLocation(); i++) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-    
-    bool bishopCanMove(Square &target) {
-        if (abs(target.getFile() - this->getFile()) != abs(target.getRank() - this->getRank())) {
-            return false;
-        }
-        if (target.getFile() > this->getFile() && target.getRank() > this->getRank()) {
-            for (int i = this->getLocation() + 9; i <= target.getLocation(); i += 9) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else if (target.getFile() > this->getFile() && target.getRank() < this->getRank()) {
-            for (int i = this->getLocation() - 7; i >= target.getLocation(); i -= 7) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else if (target.getFile() < this->getFile() && target.getRank() > this->getRank()) {
-            for (int i = this->getLocation() + 7; i <= target.getLocation(); i += 7) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        else if (target.getFile() < this->getFile() && target.getRank() < this->getRank()) {
-            for (int i = this->getLocation() - 9; i >= target.getLocation(); i -= 9) {
-                if (squaresOccupied[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-    
-    bool canMove(Square &target) {
-        if (!occupied) {
-            return false;
-        }
-        if (target.location < 0 || target.location > 63) {
-            return false;
-        }
-        if (target.getOccupiedValue()) {
-            return false;
-        }
-        
-        if (pieceType.compare("Pawn") == 0) {
-            if (pieceColor.compare("White") == 0) {
-                if (target.getLocation() - this->getLocation() == 8) {
-                    return true;
-                }
-                else if (target.getLocation() - this->getLocation() == 16 && this->getLocation() > 7 && this->getLocation() < 16) {
-                    return true;
-                }
-                return false;
-            }
-            else {
-                if (target.getLocation() - this->getLocation() == -8) {
-                    return true;
-                }
-                else if (target.getLocation() - this->getLocation() == -16 && this->getLocation() > 47 && this->getLocation() < 56) {
-                    return true;
-                }
-                return false;
-            }
-        }
-        
-        if (pieceType.compare("Knight") == 0) {
-            if (abs(((int) this->getFile()) - ((int) target.getFile())) == 1 && (abs(this->getRank() - target.getRank()) == 2)) {
-                return true;
-            }
-            else if (abs(((int) this->getFile()) - ((int) target.getFile())) == 2 && (abs(this->getRank() - target.getRank()) == 1)) {
-                return true;
-            }
-            return false;
-        }
-        
-        if (pieceType.compare("Rook") == 0) {
-            return rookCanMove(target);
-        }
-        
-        if (pieceType.compare("Bishop") == 0) {
-            return bishopCanMove(target);
-        }
-        
-        if (pieceType.compare("Queen")) {
-            return rookCanMove(target) || bishopCanMove(target);
-        }
-        return true;
-    }
-
-};
-
 int toLocation(char file_in, int rank_in) {
     return 8 * rank_in + ((int) file_in) - 73;
 }
@@ -223,11 +25,15 @@ bool isEmpty(char file_in, int rank_in) {
 bool isEmpty(int targetSquare) {
     return (squareValues[targetSquare] == 0);
 }
-//string toFileRank(int location) {
-//
-//}
 
-
+void printLines(char startFile, int startRank, char targetFile, int targetRank, bool capture) {
+    if (!capture) {
+        cout << startFile << startRank << " to " << targetFile << targetRank << endl;
+    }
+    else {
+        cout << startFile << startRank << " captures " << targetFile << targetRank << endl;
+    }
+}
 
 class Piece {
     int moves;
@@ -239,10 +45,11 @@ class Piece {
     int rank;
     int location;
     bool inPlay;
-    static int lastPieceMoved;
+    
     static Piece *notInPlay;
 
 public:
+    static int lastPieceMoved;
     static int whiteKingSquare;
     static int blackKingSquare;
     static Piece *pieces[32];
@@ -352,6 +159,9 @@ public:
         if (target_file < 'A' || target_file > 'H' || target_rank < 1 || target_rank > 8) {
             return false;
         }
+        if (target_file == getFile() && target_rank == getRank()) {
+            return false;
+        }
         int targetSquare = toLocation(target_file, target_rank);
         if (!isEmpty(targetSquare)) {
             if (((getPiece(squareValues[targetSquare]))->getColor().compare(this->color)) == 0) {
@@ -387,33 +197,24 @@ public:
         justMove(target_file, target_rank);
     }
     
-    void moveBack(char startingFile, int startingRank) {
+    virtual void moveBack(char startingFile, int startingRank) {
         int startingSquare = toLocation(startingFile, startingRank);
-        if (moves == 0 && type.compare("Queen") == 0) {
-            notInPlay->file = startingFile;
-            notInPlay->rank = startingRank;
-            pieces[notInPlay->getId() - 1] = notInPlay;
-            notInPlay->setInPlay(true);
-            delete this;
+        squareValues[startingSquare] = id;
+        squareValues[location] = 0;
+        file = startingFile;
+        rank = startingRank;
+        location = startingSquare;
+        moves--;
+        if (type.compare("King") == 0) {
+            if (id <= 16) {
+                whiteKingSquare = location;
+            }
+            else {
+                blackKingSquare = location;
+            }
         }
-        else {
-            squareValues[startingSquare] = id;
-            squareValues[location] = 0;
-            file = startingFile;
-            rank = startingRank;
-            location = startingSquare;
-            moves--;
-            if (type.compare("King") == 0) {
-                if (id <= 16) {
-                    whiteKingSquare = location;
-                }
-                else {
-                    blackKingSquare = location;
-                }
-            }
-            if (notInPlay != nullptr) {
-                notInPlay->setInPlay(true);
-            }
+        if (notInPlay != nullptr) {
+            notInPlay->setInPlay(true);
         }
     }
     
@@ -443,13 +244,15 @@ public:
     
     virtual ~Piece() {
         pieces[id-1] = nullptr;
-        squareValues[location] = 0;
+        notInPlay = nullptr;
+        
+//        squareValues[location] = 0;
     }
 };
 
 int Piece::lastPieceMoved = 0;
 Piece* Piece::notInPlay = nullptr;
-Piece * Piece::pieces[32] = {nullptr};
+Piece* Piece::pieces[32] = {nullptr};
 int Piece::whiteKingSquare = 4;
 int Piece::blackKingSquare = 60;
 
@@ -482,7 +285,7 @@ public:
         }
         int targetSquare = toLocation(target_file, target_rank);
         if ((target_file == getFile()) && (target_rank < getRank())) {
-            for (int i = getLocation() - 8; i > targetSquare; i--) {
+            for (int i = getLocation() - 8; i > targetSquare; i -= 8) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -490,7 +293,7 @@ public:
             return true;
         }
         else if ((target_file == getFile()) && (target_rank > getRank())) {
-            for (int i = getLocation() + 8; i < targetSquare; i++) {
+            for (int i = getLocation() + 8; i < targetSquare; i += 8) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -525,12 +328,12 @@ public:
         if (!Piece::canMove(target_file, target_rank)) {
             return false;
         }
-        if (abs(target_file - getFile()) != abs(target_rank - getRank())) {
+        if ((abs(target_file - getFile())) != (abs(target_rank - getRank()))) {
             return false;
         }
         int targetSquare = toLocation(target_file, target_rank);
         if ((target_file < getFile()) && (target_rank < getRank())) {
-            for (int i = getLocation() - 9; i > targetSquare; i--) {
+            for (int i = getLocation() - 9; i > targetSquare; i -= 9) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -538,7 +341,7 @@ public:
             return true;
         }
         else if ((target_file < getFile()) && (target_rank > getRank())) {
-            for (int i = getLocation() + 7; i < targetSquare; i++) {
+            for (int i = getLocation() + 7; i < targetSquare; i += 7) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -546,7 +349,7 @@ public:
             return true;
         }
         else if ((target_file > getFile()) && (target_rank < getRank())) {
-            for (int i = getLocation() - 7; i > targetSquare; i--) {
+            for (int i = getLocation() - 7; i > targetSquare; i -= 7) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -554,7 +357,7 @@ public:
             return true;
         }
         else if ((target_file > getFile()) && (target_rank > getRank())) {
-            for (int i = getLocation() + 9; i < targetSquare; i++) {
+            for (int i = getLocation() + 9; i < targetSquare; i += 9) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -580,7 +383,7 @@ public:
         }
         int targetSquare = toLocation(target_file, target_rank);
         if ((target_file == getFile()) && (target_rank < getRank())) {
-            for (int i = getLocation() - 8; i > targetSquare; i--) {
+            for (int i = getLocation() - 8; i > targetSquare; i -= 8) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -588,7 +391,7 @@ public:
             return true;
         }
         else if ((target_file == getFile()) && (target_rank > getRank())) {
-            for (int i = getLocation() + 8; i < targetSquare; i++) {
+            for (int i = getLocation() + 8; i < targetSquare; i += 8) {
                 if (!isEmpty(i)) {
                     return false;
                 }
@@ -625,40 +428,46 @@ public:
         }
         int targetSquare = toLocation(target_file, target_rank);
         if (isEmpty(targetSquare)) {
-        if (getId() <= 16) {
-            if (targetSquare - getLocation() == 8) {
-                return true;
-            }
-            if ((targetSquare - getLocation() == 16) && (getMoves() == 0)) {
-                return true;
-            }
-            if ((getRank() == 5) && (target_rank - getRank() == 1) && (abs(target_file - getFile()) == 1)) {
-                string lastMoved = getPiece(getLastPieceMoved())->getType();
-                int totalMoves = getPiece(getLastPieceMoved())->getMoves();
-                if ((getLastPieceMoved() == squareValues[targetSquare-8]) && (lastMoved.compare("Pawn")) == 0 && (totalMoves == 1)) {
+            if (getId() <= 16) {
+                if (targetSquare - getLocation() == 8) {
                     return true;
+                }
+                if ((targetSquare - getLocation() == 16) && (getMoves() == 0)) {
+                    return true;
+                }
+                if ((getRank() == 5) && (target_rank - getRank() == 1) && (abs(target_file - getFile()) == 1)) {
+                    if (Piece::lastPieceMoved == 0) {
+                        return false;
+                    }
+                    string lastMoved = getPiece(getLastPieceMoved())->getType();
+                    int totalMoves = getPiece(getLastPieceMoved())->getMoves();
+                    if ((getLastPieceMoved() == squareValues[targetSquare-8]) && (lastMoved.compare("Pawn")) == 0 && (totalMoves == 1)) {
+                        return true;
+                    }
+                    return false;
                 }
                 return false;
             }
-            return false;
-        }
-        else {
-            if (targetSquare - getLocation() == -8) {
-                return true;
-            }
-            if ((targetSquare - getLocation() == -16) && (getMoves() == 0)) {
-                return true;
-            }
-            if ((getRank() == 4) && (target_rank - getRank() == -1) && (abs(target_file - getFile()) == 1)) {
-                string lastMoved = getPiece(getLastPieceMoved())->getType();
-                int totalMoves = getPiece(getLastPieceMoved())->getMoves();
-                if ((getLastPieceMoved() == squareValues[targetSquare+8]) && (lastMoved.compare("Pawn")) == 0 && (totalMoves == 1)) {
+            else {
+                if (targetSquare - getLocation() == -8) {
                     return true;
+                }
+                if ((targetSquare - getLocation() == -16) && (getMoves() == 0)) {
+                    return true;
+                }
+                if ((getRank() == 4) && (target_rank - getRank() == -1) && (abs(target_file - getFile()) == 1)) {
+                    if (Piece::lastPieceMoved == 0) {
+                        return false;
+                    }
+                    string lastMoved = getPiece(getLastPieceMoved())->getType();
+                    int totalMoves = getPiece(getLastPieceMoved())->getMoves();
+                    if ((getLastPieceMoved() == squareValues[targetSquare+8]) && (lastMoved.compare("Pawn")) == 0 && (totalMoves == 1)) {
+                        return true;
+                    }
+                    return false;
                 }
                 return false;
             }
-            return false;
-        }
         }
         else {
             if (getId() <= 16) {
@@ -680,39 +489,37 @@ public:
         if ((abs(target_file - getFile()) == 1) && (abs(target_rank - getRank()) == 1) && (isEmpty(target_file, target_rank))) {
             int victimSquare = toLocation(target_file, getRank());
             getPiece(squareValues[victimSquare])->setInPlay(false);
-            cout << getColor() << ": " << getFile() << getRank() << " captures on " << target_file << target_rank << " (en passant)" << endl;
-            justMove(target_file, target_rank);
+//            cout << getColor() << ": " << getFile() << getRank() << " captures on " << target_file << target_rank << " (en passant)" << endl;
+//            justMove(target_file, target_rank);
         }
-        else {
-            Piece::move(target_file, target_rank);
-        }
-        if (((getId() <= 16) && (getRank() == 8)) || ((getId() >= 17) && (getRank() == 1))) {
-            string newType = "Pawn";
-            cout << "Enter a new piece (Knight, Bishop, Rook, or Queen): ";
-            cin >> newType;
-            cout << endl;
-            while ((newType.compare("Knight") != 0) && (newType.compare("Bishop") != 0) && (newType.compare("Rook") != 0) && (newType.compare("Knight") != 0)) {
-                cout << "Try again (Knight, Bishop, Rook, or Queen): ";
-                cin >> newType;
-                cout << endl;
-            }
-            Piece *newPiece = nullptr;
-            if (newType.compare("Knight") == 0) {
-                newPiece = new Knight(this->getId(), this->getFile(), this->getRank());
-            }
-            else if (newType.compare("Bishop") == 0) {
-                newPiece = new Bishop(this->getId(), this->getFile(), this->getRank());
-            }
-            else if (newType.compare("Rook") == 0) {
-                newPiece = new Rook(this->getId(), this->getFile(), this->getRank());
-            }
-            else {
-                newPiece = new Queen(this->getId(), this->getFile(), this->getRank());
-            }
-            this->setInPlay(false);
-            changePieces(newPiece);
-            cout << newPiece->getColor() << ": Pawn to " << newType << " on " << newPiece->getFile() << newPiece->getRank() << endl;
-        }
+        Piece::move(target_file, target_rank);
+//        if (((getId() <= 16) && (getRank() == 8)) || ((getId() >= 17) && (getRank() == 1))) {
+//            string newType = "Pawn";
+//            cout << "Enter a new piece (Knight, Bishop, Rook, or Queen): ";
+//            cin >> newType;
+//            cout << endl;
+//            while ((newType.compare("Knight") != 0) && (newType.compare("Bishop") != 0) && (newType.compare("Rook") != 0) && (newType.compare("Knight") != 0)) {
+//                cout << "Try again (Knight, Bishop, Rook, or Queen): ";
+//                cin >> newType;
+//                cout << endl;
+//            }
+//            Piece *newPiece = nullptr;
+//            if (newType.compare("Knight") == 0) {
+//                newPiece = new Knight(this->getId(), this->getFile(), this->getRank());
+//            }
+//            else if (newType.compare("Bishop") == 0) {
+//                newPiece = new Bishop(this->getId(), this->getFile(), this->getRank());
+//            }
+//            else if (newType.compare("Rook") == 0) {
+//                newPiece = new Rook(this->getId(), this->getFile(), this->getRank());
+//            }
+//            else {
+//                newPiece = new Queen(this->getId(), this->getFile(), this->getRank());
+//            }
+//            this->setInPlay(false);
+//            changePieces(newPiece);
+//            cout << newPiece->getColor() << ": Pawn to " << newType << " on " << newPiece->getFile() << newPiece->getRank() << endl;
+//        }
     }
 };
 
@@ -729,7 +536,8 @@ public:
         }
         if ((getMoves() == 0) && (target_file == 'C') && (target_rank == getRank())) {
             int rookLocation = toLocation('A', getRank());
-            if (getPiece(squareValues[rookLocation])->getMoves() == 0 && ((getPiece(squareValues[rookLocation])->getId() % 16) == 9)) {
+            Piece *queenRook = getPiece(squareValues[rookLocation]);
+            if (queenRook && queenRook->getMoves() == 0 && (queenRook->getId() % 16) == 9) {
                 for (int i = rookLocation+1; i <= rookLocation+3; i++) {
                     if (!isEmpty(i)) {
                         return false;
@@ -741,7 +549,8 @@ public:
         }
         else if ((getMoves() == 0) && (target_file == 'G') && (target_rank == getRank())) {
             int rookLocation = toLocation('H', getRank());
-            if (getPiece(squareValues[rookLocation])->getMoves() == 0 && ((getPiece(squareValues[rookLocation])->getId() % 16) == 0)) {
+            Piece *kingRook = getPiece(squareValues[rookLocation]);
+            if (kingRook && kingRook->getMoves() == 0 && (kingRook->getId() % 16) == 0) {
                 for (int i = getLocation()+1; i <= rookLocation-1; i++) {
                     if (!isEmpty(i)) {
                         return false;
@@ -759,12 +568,12 @@ public:
         if (targetSquare - getLocation() == -2) {
             getPiece(squareValues[toLocation('A', this->getRank())])->justMove('D', getRank());
             justMove(target_file, target_rank);
-            cout << getColor() << ": Queen Side Castle" << endl;
+//            cout << getColor() << ": Queen Side Castle" << endl;
         }
         else if (targetSquare - getLocation() == 2) {
             getPiece(squareValues[toLocation('H', this->getRank())])->justMove('F', getRank());
             justMove(target_file, target_rank);
-            cout << getColor() << ": King Side Castle" << endl;
+//            cout << getColor() << ": King Side Castle" << endl;
         }
         else {
             Piece::move(target_file, target_rank);
@@ -775,6 +584,19 @@ public:
         else {
             blackKingSquare = getLocation();
         }
+    }
+    
+    void moveBack(char startingFile, int startingRank) override {
+        int startingSquare = toLocation(startingFile, startingRank);
+        if (startingSquare-getLocation() == 2) {
+            Piece *queenRook = getPiece(squareValues[getLocation()+1]);
+            queenRook->moveBack('A', getRank());
+        }
+        else if (startingSquare-getLocation() == -2) {
+            Piece *kingRook = getPiece(squareValues[getLocation()-1]);
+            kingRook->moveBack('H', getRank());
+        }
+        Piece::moveBack(startingFile, startingRank);
     }
 };
 
@@ -819,12 +641,18 @@ public:
         return oppositePlayer;
     }
     
+    void switchPlayer() {
+        string temp = currentPlayer;
+        currentPlayer = oppositePlayer;
+        oppositePlayer = temp;
+    }
+    
     bool kingCheckStatus(string color) {
         if (color.compare("White") == 0) {
             char kingFile = Piece::getPiece(13)->getFile();
             int kingRank = Piece::getPiece(13)->getRank();
             for (int i = 17; i <= 32; i++) {
-                if (Piece::getPiece(i) == nullptr) {
+                while ((i <= 32) && Piece::getPiece(i) == nullptr) {
                     i++;
                 }
                 if (Piece::getPiece(i)->canMove(kingFile, kingRank)) {
@@ -839,7 +667,7 @@ public:
             char kingFile = Piece::getPiece(29)->getFile();
             int kingRank = Piece::getPiece(29)->getRank();
             for (int i = 1; i <= 16; i++) {
-                if (Piece::getPiece(i) == nullptr) {
+                while ((i <= 16) && Piece::getPiece(i) == nullptr) {
                     i++;
                 }
                 if (Piece::getPiece(i)->canMove(kingFile, kingRank)) {
@@ -859,7 +687,7 @@ public:
         else {
             blackKingCheck = kingCheck;
         }
-        Piece::getPiece(id)->moveBack(file, rank);
+        (Piece::getPiece(id))->moveBack(file, rank);
     }
     
     bool getMate() {
@@ -867,14 +695,14 @@ public:
     }
     
     bool isMate() {
-        int offset = 0;
-        bool kingCheck = whiteKingCheck;
-        if (currentPlayer.compare("Black") == 0) {
-            offset = 16;
-            kingCheck = blackKingCheck;
+        int offset = 16;
+        bool kingCheck = blackKingCheck;
+        if (currentPlayer.compare("White") == 0) {
+            offset = 0;
+            kingCheck = whiteKingCheck;
         }
         for (int i = 13+offset; i <= 16+offset; i++) {
-            while (Piece::getPiece(i) == nullptr) {
+            while ((i <= 16+offset) && Piece::getPiece(i) == nullptr) {
                 if (i == 13+offset) {
                     i = offset;
                 }
@@ -1106,36 +934,32 @@ public:
         return true;
     }
     
-    bool movePiece(char currentFile, int currentRank, char targetFile, int targetRank) {
+    bool movePiece(char currentFile, int currentRank, char targetFile, int targetRank, bool kingCheck) {
         int currentSquare = toLocation(currentFile, currentRank);
         int targetSquare = toLocation(targetFile, targetRank);
-        bool kingCheck = false;
-        int offset = 56;
-        if (currentPlayer.compare("White")) {
-            kingCheck = kingCheckStatus("White");
+        int offset = 8;
+        if (currentPlayer.compare("Black") == 0) {
+            offset = 1;
         }
-        else {
-            kingCheck = kingCheckStatus("Black");
-            offset = 0;
-        }
-        if (isMate()) {
-            if (kingCheck) {
-                cout << "Checkmate! " << oppositePlayer << "has won!" << endl;
-            }
-            else {
-                cout << "Stalemate! Game has ended in a draw!" << endl;
-            }
-        }
+//        if (isMate()) {
+//            if (kingCheck) {
+//                cout << "Checkmate! " << oppositePlayer << "has won!" << endl;
+//            }
+//            else {
+//                cout << "Stalemate! Game has ended in a draw!" << endl;
+//            }
+//            return false;
+//        }
         
-        if (isEmpty(currentSquare)) {
-            cout << "Choose a square with a piece" << endl;
-            return false;
-        }
-        if ((offset == 0 && squareValues[currentSquare] > 16) || (offset == 56 && squareValues[currentSquare] < 17)) {
-            cout << "Choose a " << currentPlayer << " piece" << endl;
-            return false;
-        }
-        if (!Piece::getPiece(squareValues[currentSquare])->canMove(targetFile, targetRank)) {
+//        if (isEmpty(currentSquare)) {
+//            cout << "Choose a square with a piece" << endl;
+//            return false;
+//        }
+//        if ((offset == 0 && squareValues[currentSquare] > 16) || (offset == 56 && squareValues[currentSquare] < 17)) {
+//            cout << "Choose a " << currentPlayer << " piece" << endl;
+//            return false;
+//        }
+        if (!(Piece::getPiece(squareValues[currentSquare]))->canMove(targetFile, targetRank)) {
             cout << "Cannot move from " << currentFile << currentRank << " to " << targetFile << targetRank << endl;
             return false;
         }
@@ -1143,25 +967,42 @@ public:
             cout << "Cannot castle on a Check" << endl;
             return false;
         }
+        int id = squareValues[currentSquare];
         Piece::getPiece(squareValues[currentSquare])->move(targetFile, targetRank);
         if (kingCheckStatus(currentPlayer)) {
             Piece::getPiece(squareValues[targetSquare])->moveBack(currentFile, currentRank);
+            cout << "Cannot place King under Check" << endl;
             return false;
         }
-        if (Piece::getNotInPlay() != nullptr) {
+        else {
+            Piece::lastPieceMoved = id;
+        }
+        
+        if ((Piece::lastPieceMoved % 16 == 13) && (abs(targetFile-currentFile) == 2)) {
+            if (abs(targetFile-currentFile) == -2) {
+                cout << getCurrentPlayer() << ": Queen Side Castle" << endl;
+            }
+            else if (abs(targetFile-currentFile) == 2) {
+                cout << getCurrentPlayer() << ": King Side Castle" << endl;
+            }
+        }
+        else if (Piece::getNotInPlay() != nullptr) {
+            printLines(currentFile, currentRank, targetFile, targetRank, true);
             delete Piece::getNotInPlay();
         }
-        for (int i = offset; i < offset+8; i++) {
-            if (Piece::getPiece(squareValues[i])->getType().compare("Pawn") == 0) {
-                Piece *currentPawn = Piece::getPiece(squareValues[i]);
+        else {
+            printLines(currentFile, currentRank, targetFile, targetRank, false);
+        }
+        for (char j = 'A'; j <= 'H'; j++) {
+            int i = toLocation(j, offset);
+            if (Piece::getPiece(squareValues[toLocation(j, offset)]) && Piece::getPiece(squareValues[toLocation(j, offset)])->getType().compare("Pawn") == 0) {
+                Piece *currentPawn = Piece::getPiece(squareValues[toLocation(j, offset)]);
                 string newType = "Pawn";
                 cout << "Enter a new piece (Knight, Bishop, Rook, or Queen): ";
                 cin >> newType;
-                cout << endl;
                 while ((newType.compare("Knight") != 0) && (newType.compare("Bishop") != 0) && (newType.compare("Rook") != 0) && (newType.compare("Knight") != 0)) {
                     cout << "Try again (Knight, Bishop, Rook, or Queen): ";
                     cin >> newType;
-                    cout << endl;
                 }
                 Piece *newPiece = nullptr;
                 if (newType.compare("Knight") == 0) {
@@ -1190,64 +1031,71 @@ public:
                 delete Piece::getPiece(i);
             }
         }
+        for (int j = 0; j < 64; j++) {
+            squareValues[j] = 0;
+        }
     }
 };
 
 int main(int argc, const char * argv[]) {
     Game chess;
     bool gameOver = false;
+    bool kingCheck = false;
     while (!gameOver) {
-        bool kingCheck = false;
-        int offset = 56;
-        if (chess.getCurrentPlayer().compare("White")) {
-            kingCheck = chess.kingCheckStatus("White");
+        bool acceptedMove = false;
+        while (!acceptedMove) {
+            string startingSquare = "";
+            cout << chess.getCurrentPlayer() << ": Enter a starting square: ";
+            bool acceptedStartingSquare = false;
+            char startfile = '0';
+            int startrank = 0;
+            while (!acceptedStartingSquare) {
+                cin >> startingSquare;
+                while (startingSquare.length() != 2 || startingSquare[0] < 'A' || startingSquare[0] > 'H' || startingSquare[1] < '1' || startingSquare[1] > '8') {
+                    cout << "Choose a valid starting square: ";
+                    cin >> startingSquare;
+                }
+                startfile = startingSquare[0];
+                startrank = ((int) startingSquare[1]) - 48;
+                int startSquare = toLocation(startfile, startrank);
+                if (isEmpty(startSquare) || (squareValues[startSquare] > 16 && chess.getCurrentPlayer().compare("White") == 0) || (squareValues[startSquare] < 17 && chess.getCurrentPlayer().compare("Black") == 0)) {
+                    cout << "Choose a square with a " << chess.getCurrentPlayer() << " piece: ";
+                    acceptedStartingSquare = false;
+                }
+                else {
+                    acceptedStartingSquare = true;
+                }
+            }
+            string endSquare = "";
+            cout << chess.getCurrentPlayer() << ": Enter a square to move to: ";
+            char endFile = '0';
+            int endRank = 0;
+            cin >> endSquare;
+            if (endSquare.length() != 2 || endSquare[0] < 'A' || endSquare[0] > 'H' || endSquare[1] < '1' || endSquare[1] > '8') {
+                cout << "Not a valid square" << endl;
+                acceptedMove = false;
+            }
+            else {
+                endFile = endSquare[0];
+                endRank = ((int) endSquare[1]) - 48;
+                acceptedMove = chess.movePiece(startfile, startrank, endFile, endRank, kingCheck);
+            }
         }
-        else {
-            kingCheck = chess.kingCheckStatus("Black");
-            offset = 0;
-        }
-        if (chess.isMate()) {
+        chess.switchPlayer();
+        kingCheck = chess.kingCheckStatus(chess.getCurrentPlayer());
+        bool mate = chess.isMate();
+        if (mate) {
             if (kingCheck) {
-                cout << "Checkmate! " << chess.getOppositePlayer() << "has won!" << endl;
+                cout << "Checkmate! " << chess.getOppositePlayer() << " has won!" << endl;
             }
             else {
                 cout << "Stalemate! Game has ended in a draw!" << endl;
             }
-            gameOver = true;
         }
-        string startingSquare = "";
-        cout << chess.getCurrentPlayer() << ": Enter a starting square: ";
-        bool acceptedStartingSquare = false;
-        char startfile = '0';
-        int startrank = 0;
-        while (!acceptedStartingSquare) {
-            cin >> startingSquare;
-            cout << endl;
-            while (startingSquare.length() != 2 || startingSquare[0] < 'A' || startingSquare[0] > 'H' || startingSquare[1] < '1' || startingSquare[1] > 8) {
-                cout << "Choose a valid starting square: ";
-                cin >> startingSquare;
-                cout << endl;
-            }
-            startfile = startingSquare[0];
-            startrank = ((int) startingSquare[1]) - 48;
-            int startSquare = toLocation(startfile, startrank);
-            if (isEmpty(startSquare) || (squareValues[startSquare] > 16 && chess.getCurrentPlayer().compare("White") == 0) || (squareValues[startSquare] < 17 && chess.getCurrentPlayer().compare("Black") == 0)) {
-                cout << "Choose a square with a " << chess.getCurrentPlayer() << " piece: ";
-            }
-            else {
-                acceptedStartingSquare = true;
-            }
+        if (kingCheck) {
+            cout << "Check!" << endl;
         }
-        string endSquare = "";
-        cout << chess.getCurrentPlayer() << ": Enter a square to move to: ";
-        bool acceptedEndSquare = false;
-        char endFile = '0';
-        int endRank = 0;
-        while (!acceptedEndSquare) {
-            <#statements#>
-        }
-
+        gameOver = mate;
     }
-    cout << (int) '1' << endl;
-    
+    return 0;
 }
