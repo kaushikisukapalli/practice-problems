@@ -10,7 +10,7 @@
 #include <vector>
 using namespace std;
 
-int binarySearch(vector<int> input, int search) {
+int binarySearch(vector<int> &input, int search) {
     int i = 0;
     int j = input.size()-1;
     int m = (i+j)/2;
@@ -44,5 +44,6 @@ int main(int argc, const char * argv[]) {
     myVector.push_back(10);
     myVector.push_back(17);
     myVector.push_back(25);
-    cout << binarySearch(myVector, 17) << endl;;
+    cout << binarySearch(myVector, 17) << endl;
+    cout << 5 << endl;
 }
