@@ -12,36 +12,58 @@ using namespace std;
 
 vector<int> spiralOrder(vector<vector<int>>& matrix) {
     vector<int> output;
-    int hlength = matrix[0].size()-1;
-    int vlength = matrix.size()-1;
     for (int j = 0; j < matrix[0].size()-1; j++) {
         output.push_back(matrix[0][j]);
     }
-    int vstart = 0;
-    int hstart = matrix[0].size()-1;
-    while (hlength > 0 || vlength > 0) {
-        for (int i = vstart; i < vstart+vlength; i++) {
-            output.push_back(matrix[i][hstart]);
+    int vloc = 0;
+    int hloc = matrix[0].size()-1;
+    int vert = matrix.size()-1;
+    int hor = (matrix[0].size()-1) * (-1);
+    int vinc = 1;
+    int hinc = -1;
+    while (vert != 0 && hor != 0) {
+        for (int i = vloc; vert != 0 && hor != 0 && i != vloc+vert; i += vinc) {
+            output.push_back(matrix[i][hloc]);
         }
-        vstart += vlength;
-        vlength--;
-        for (int j = hstart; j > hstart-hlength; j--) {
-            output.push_back(matrix[vstart][j]);
+        if (vert != 0 && hor != 0) {
+            vloc += vert;
+            if (vert > 0) {
+                vert--;
+            }
+            else if (vert < 0) {
+                vert++;
+            }
+            vert *= -1;
+            vinc *= -1;
         }
-        hstart -= hlength;
-        hlength--;
-        for (int i = vstart; i > vstart-vlength; i--) {
-            output.push_back(matrix[i][hstart]);
+        for (int j = hloc; vert != 0 && hor != 0 && j != hloc+hor; j += hinc) {
+            output.push_back(matrix[vloc][j]);
         }
-        vstart -= vlength;
-        vlength--;
-        for (int j = hstart; j < hstart+hlength; j++) {
-            output.push_back(matrix[vstart][j]);
+        if (vert != 0 && hor != 0) {
+            hloc += hor;
+            if (hor > 0) {
+                hor--;
+            }
+            else if (hor < 0) {
+                hor++;
+            }
+            hor *= -1;
+            hinc *= -1;
         }
-        hstart += hlength;
-        hlength--;
     }
-    output.push_back(matrix[vstart][hstart]);
+    if (vert == 0) {
+        for (int j = hloc; j != hloc+hor; j += hinc) {
+            output.push_back(matrix[vloc][j]);
+        }
+        hloc += hor;
+    }
+    else {
+        for (int i = vloc; i != vloc+vert; i += vinc) {
+            output.push_back(matrix[i][hloc]);
+        }
+        vloc += vert;
+    }
+    output.push_back(matrix[vloc][hloc]);
     return output;
 }
 
